@@ -1,0 +1,5 @@
+pyyaml
+bip44
+python-dotenv
+web3
+eth-account

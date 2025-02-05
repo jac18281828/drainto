@@ -21,7 +21,9 @@ RPC_URL = os.getenv("RPC_URL")
 MNEMONIC = os.getenv("MNEMONIC").strip()
 
 if not DEST_WALLET or not RPC_URL or not MNEMONIC:
-    raise Exception("Please ensure DEST_WALLET, RPC_URL, and MNEMONIC are set in the .env file.")
+    raise Exception(
+        "Please ensure DEST_WALLET, RPC_URL, and MNEMONIC are set in the .env file."
+    )
 
 # Load tokens from token.yml
 with open("token.yml", "r") as token_file:
@@ -68,6 +70,7 @@ print(f"Using account: {my_address}")
 
 # --- TOKEN DRAIN FUNCTION ---
 
+
 def drain_token(token):
     token_name = token.get("name", "Unknown Token")
     token_symbol = token.get("symbol", "")
@@ -81,7 +84,9 @@ def drain_token(token):
     print(f"\nProcessing {token_name} ({token_symbol}) at address {token_address}")
 
     # Instantiate token contract
-    contract = w3.eth.contract(address=Web3.to_checksum_address(token_address), abi=ERC20_ABI)
+    contract = w3.eth.contract(
+        address=Web3.to_checksum_address(token_address), abi=ERC20_ABI
+    )
 
     try:
         # Get token balance for our account
@@ -90,7 +95,7 @@ def drain_token(token):
         print(f"Error fetching balance for {token_symbol}: {e}")
         return
 
-    human_balance = balance / (10 ** decimals)
+    human_balance = balance / (10**decimals)
     print(f"Balance: {human_balance} {token_symbol}")
 
     if balance == 0:
@@ -105,19 +110,23 @@ def drain_token(token):
         # Build transaction dictionary; note that gas is estimated from the transfer call.
         tx = contract.functions.transfer(
             Web3.toChecksumAddress(DEST_WALLET), balance
-        ).buildTransaction({
-            "from": my_address,
-            "nonce": nonce,
-            "gasPrice": gas_price,
-            "chainId": chain_id,
-        })
+        ).buildTransaction(
+            {
+                "from": my_address,
+                "nonce": nonce,
+                "gasPrice": gas_price,
+                "chainId": chain_id,
+            }
+        )
 
         # Optionally, estimate gas if desired:
         estimated_gas = w3.eth.estimate_gas(tx)
         tx["gas"] = estimated_gas
 
         print(f"Sending {human_balance} {token_symbol} to {DEST_WALLET}")
-        print(f"Transaction details: nonce={nonce}, gas={estimated_gas}, gasPrice={gas_price}")
+        print(
+            f"Transaction details: nonce={nonce}, gas={estimated_gas}, gasPrice={gas_price}"
+        )
     except Exception as e:
         print(f"Error building transaction for {token_symbol}: {e}")
         return
@@ -146,8 +155,8 @@ def drain_token(token):
             print("Transaction failed.")
     except Exception as e:
         print(f"Error waiting for receipt: {e}")
-        
-        
+
+
 # drain eth to dest wallet
 def drain_eth(force: bool = False):
     # Get the current balance of the account
@@ -155,7 +164,7 @@ def drain_eth(force: bool = False):
     human_balance = w3.from_wei(balance, "ether")
     print(f"ETH Balance: {human_balance} ETH")
 
-    if balance == 0 or human_balance < 1 and not force:
+    if balance == 0 or human_balance < 0.5 and not force:
         print("Insufficient balance for ETH. Skipping transfer.")
         return
 
@@ -163,7 +172,7 @@ def drain_eth(force: bool = False):
     try:
         nonce = w3.eth.get_transaction_count(my_address)
         gas_price = w3.eth.gas_price
-        
+
         gas = 21000
         balance_less_gas = balance - (gas * gas_price)
 
@@ -206,9 +215,11 @@ def drain_eth(force: bool = False):
         else:
             print("Transaction failed.")
     except Exception as e:
-        print(f"Error waiting for receipt: {e}")        
+        print(f"Error waiting for receipt: {e}")
+
 
 # --- MAIN ---
+
 
 def main():
     print(f"Draining tokens from {my_address} to {DEST_WALLET}...")
@@ -216,11 +227,12 @@ def main():
         drain_token(token)
         # Pause briefly between transactions to avoid nonce issues
         time.sleep(0.5)
-        
+
     if len(sys.argv) > 1 and sys.argv[1] == "force":
         drain_eth(force=True)
     else:
         drain_eth()
+
 
 if __name__ == "__main__":
     main()
